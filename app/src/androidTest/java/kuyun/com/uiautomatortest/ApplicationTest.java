@@ -8,15 +8,12 @@ import android.support.test.filters.SdkSuppress;
 import android.support.test.runner.AndroidJUnit4;
 import android.support.test.uiautomator.By;
 import android.support.test.uiautomator.BySelector;
-import android.support.test.uiautomator.UiCollection;
 import android.support.test.uiautomator.UiDevice;
-import android.support.test.uiautomator.UiObject;
 import android.support.test.uiautomator.UiObject2;
 import android.support.test.uiautomator.UiObjectNotFoundException;
 import android.support.test.uiautomator.UiScrollable;
 import android.support.test.uiautomator.UiSelector;
 import android.util.Log;
-import android.view.KeyEvent;
 
 import org.junit.After;
 import org.junit.Before;
