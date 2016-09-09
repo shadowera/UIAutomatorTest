@@ -109,6 +109,8 @@ public class ApplicationTest {
             //UiScrollable listSettings = new UiScrollable(new UiSelector().className("android.widget.ListView"));
         } else {
             fail();
+
+
         }
         if (!scroll.scrollIntoView(new UiSelector().textContains("服务协议"))) {
             fail();
