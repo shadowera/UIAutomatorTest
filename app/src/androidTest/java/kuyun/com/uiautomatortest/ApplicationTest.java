@@ -478,9 +478,9 @@ public class ApplicationTest {
                 Rect rec = child.getChild(new UiSelector().className("android.widget.ImageView").resourceId("com.kuyun.plugin.app.card.personcenter:id/scItemState")).getBounds();
                 takeScreenshot("temp.png");
                 Utils.saveBitMapToSdcard(Utils.getSubImage(screenShootPath + "/temp.png", rec), "temp_isCheck.png");
-                if (Utils.sameAs(screenShootPath + "/check.png", screenShootPath + "/temp_isCheck.png", 0.98)) {
+                if (Utils.similarAs(screenShootPath + "/check.png", screenShootPath + "/temp_isCheck.png", 0.98)) {
                     isCheck = true;
-                } else if (Utils.sameAs(screenShootPath + "/unCheck.png", screenShootPath + "/temp_isCheck.png", 0.98)) {
+                } else if (Utils.similarAs(screenShootPath + "/unCheck.png", screenShootPath + "/temp_isCheck.png", 0.98)) {
                     isCheck = false;
                 } else {
                     fail();

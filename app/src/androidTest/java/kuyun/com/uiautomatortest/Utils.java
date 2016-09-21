@@ -2,6 +2,7 @@ package kuyun.com.uiautomatortest;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
 import android.graphics.Rect;
 import android.os.Environment;
 
@@ -9,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 
 public class Utils {
 
@@ -102,4 +104,72 @@ public class Utils {
     public static String getScreenShootPath() {
         return Environment.getExternalStorageDirectory().getPath() + "/test-screenshots";
     }
-}  
+
+    private static float getSimilarity(float[] fingerPrint, float[] print) {
+        int length = fingerPrint.length;
+        if (length != print.length)
+            return 0;
+        int total = 0;
+        for (int j = 0; j < length; j++) {
+            if (fingerPrint[j] == print[j]) {
+                total++;
+            }
+        }
+        return total * 1f / length;
+    }
+
+    public static float[] getFingerPrint(String fileName) {
+        Bitmap bm_check;
+        FileInputStream is = null;
+        try {
+            is = new FileInputStream(fileName);
+            bm_check = BitmapFactory.decodeStream(is);
+            int width = bm_check.getWidth();
+            int height = bm_check.getHeight();
+            int[] pixels = new int[width * height];
+            float[] srcPixels = new float[width * height];
+            bm_check.getPixels(pixels, 0, width, 0, 0, width, height);
+            long total = 0;
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < width; j++) {
+                    int pos = width * i + j;
+                    int color = pixels[pos];
+                    float gray = Color.red(color) * 0.3f + Color.green(color) * 0.59f + Color.blue(color) * 0.11f;
+                    srcPixels[pos] = gray;
+                    total += gray;
+                }
+            }
+            float ave = total / srcPixels.length;
+            for (int i = 0; i < width; i++) {
+                for (int j = 0; j < width; j++) {
+                    int pos = width * i + j;
+                    if (srcPixels[pos] > ave) {
+                        srcPixels[pos] = 1;
+                    } else {
+                        srcPixels[pos] = 0;
+                    }
+                }
+            }
+            return srcPixels;
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (is != null) {
+                try {
+                    is.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return null;
+    }
+
+    public static boolean similarAs(String path1, String path2, double percent) throws FileNotFoundException {
+        float[] fingerPrint1 = getFingerPrint(path1);
+        float[] fingerPrint2 = getFingerPrint(path2);
+
+        float similarity = getSimilarity(fingerPrint1, fingerPrint2);
+        return similarity >= percent;
+    }
+}
