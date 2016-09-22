@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Rect;
-import android.nfc.Tag;
 import android.os.Environment;
 import android.support.test.InstrumentationRegistry;
 import android.support.test.filters.SdkSuppress;
@@ -19,14 +18,12 @@ import android.support.test.uiautomator.UiScrollable;
 import android.support.test.uiautomator.UiSelector;
 import android.util.Log;
 
-import junit.framework.Assert;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-import java.io.Console;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.regex.Matcher;

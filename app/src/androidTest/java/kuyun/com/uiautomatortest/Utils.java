@@ -172,4 +172,11 @@ public class Utils {
         float similarity = getSimilarity(fingerPrint1, fingerPrint2);
         return similarity >= percent;
     }
+
+    public static float getSimilarity(String path1, String path2) {
+        float[] fingerPrint1 = getFingerPrint(path1);
+        float[] fingerPrint2 = getFingerPrint(path2);
+        return getSimilarity(fingerPrint1, fingerPrint2);
+
+    }
 }
