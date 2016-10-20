@@ -1,18 +1,28 @@
 package kuyun.com.uiautomatortest;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Debug;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Calendar;
+import java.util.List;
 
 public class Utils {
+    public static String kuyun_packagename = "com.kuyun.common.androidtv";
 
     public static boolean sameAs(String path1, String path2) throws FileNotFoundException {
         FileInputStream fis1 = new FileInputStream(path1);
@@ -177,6 +187,75 @@ public class Utils {
         float[] fingerPrint1 = getFingerPrint(path1);
         float[] fingerPrint2 = getFingerPrint(path2);
         return getSimilarity(fingerPrint1, fingerPrint2);
+    }
 
+
+    /*public static void logKuyunMemory() {
+         CommandExecution.CommandResult commandResult = CommandExecution.execCommand("dumpsys meminfo com.kuyun.common.androidtv", false);
+         UiAutomationLog(commandResult.successMsg);
+         UiAutomationLog(commandResult.errorMsg);
+     }*/
+
+    /**在log文件中打印kuyun主程序内存信息
+     * @param msg 附加信息
+     * @param context 可以传
+     */
+    public static void logKuyunMemory(String msg, Context context) {
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        List<ActivityManager.RunningAppProcessInfo> procInfo = am.getRunningAppProcesses();
+        for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : procInfo) {
+            System.out.println(runningAppProcessInfo.processName + String.format(",pid = %d", runningAppProcessInfo.pid));
+            if (runningAppProcessInfo.processName.indexOf(kuyun_packagename) != -1) {
+                int pids[] = {runningAppProcessInfo.pid};
+                Debug.MemoryInfo self_mi[] = am.getProcessMemoryInfo(pids);
+                StringBuffer strbuf = new StringBuffer();
+                strbuf.append(" proccess Name:").append(runningAppProcessInfo.processName)
+                        .append("\n pid:").append(runningAppProcessInfo.pid)
+                        .append("\n dalvikPrivateDirty:").append(self_mi[0].dalvikPrivateDirty)
+                        .append("\n dalvikPss:").append(self_mi[0].dalvikPss)
+                        .append("\n dalvikSharedDirty:").append(self_mi[0].dalvikSharedDirty)
+                        .append("\n nativePrivateDirty:").append(self_mi[0].nativePrivateDirty)
+                        .append("\n nativePss:").append(self_mi[0].nativePss)
+                        .append("\n nativeSharedDirty:").append(self_mi[0].nativeSharedDirty)
+                        .append("\n otherPrivateDirty:").append(self_mi[0].otherPrivateDirty)
+                        .append("\n otherPss:").append(self_mi[0].otherPss)
+                        .append("\n otherSharedDirty:").append(self_mi[0].otherSharedDirty)
+                        .append("\n TotalPrivateDirty:").append(self_mi[0].getTotalPrivateDirty())
+                        .append("\n TotalPss:").append(self_mi[0].getTotalPss())
+                        .append("\n TotalSharedDirty:").append(self_mi[0].getTotalSharedDirty());
+                UiAutomationLog(msg + (strbuf.toString()));
+            }
+        }
+    }
+
+
+
+    public static String m_logpathString = "/mnt/sdcard/PerformanceLog.txt";
+    /**
+     打log
+     *文件地址/mnt/sdcard/PerformanceLog.txt
+     */
+    public static void UiAutomationLog(String str) {
+        // 取得当前时间
+        Calendar calendar = Calendar.getInstance();
+        calendar.setTimeInMillis(System.currentTimeMillis());
+        String datestr = calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND) + ":" + calendar.get(Calendar.MILLISECOND) + ":";
+
+        FileWriter fwlog = null;
+        try {
+            fwlog = new FileWriter(m_logpathString, true);
+            fwlog.write(datestr + str + "\r\n");
+            System.out.println(datestr + str);
+            fwlog.flush();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                fwlog.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }

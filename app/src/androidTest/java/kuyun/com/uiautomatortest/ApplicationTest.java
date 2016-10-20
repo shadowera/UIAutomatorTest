@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -40,13 +41,50 @@ public class ApplicationTest {
 
     private static final String TAG = "ApplicationTest";
     private UiDevice mDevice;
+    private Context mContext;
 
     @Before
     public void before() throws InterruptedException {
         // Initialize UiDevice instance
         mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         assertThat(mDevice, notNullValue());
+        mContext = InstrumentationRegistry.getContext();
         //mDevice.pressHome();
+    }
+
+    //从卡片列表进入到某张确定卡片
+    public boolean enterCard(String cardName) throws InterruptedException, UiObjectNotFoundException {
+        UiObject2 list = waitForObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/ll_scroll_main"));
+        int childCount = list.getChildCount();
+        // Utils.UiAutomationLog("childcount=" + children.size() + ",count=" + childCount);
+        List<UiObject2> children = list.getChildren();
+        UiObject2 item = children.get(children.size() - 1);
+       // Utils.UiAutomationLog(children.size() + "");
+        boolean has = item.hasObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/view_mask"));
+
+        String title = item.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/tv_default_title")).getText();
+        //Utils.UiAutomationLog(title);
+        if (cardName.equals(title)) {
+            mDevice.pressEnter();
+            return true;
+        } else {
+            mDevice.pressDPadLeft();
+        }
+        for (int index = childCount - 1; index > 0; index--) {
+            list = mDevice.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/ll_scroll_main"));
+            children = list.getChildren();
+           // Utils.UiAutomationLog(children.size() + "");
+            item = children.get(children.size() - 2);
+            has = item.hasObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/view_mask"));
+            title = item.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/tv_default_title")).getText();
+            if (cardName.equals(title)) {
+                mDevice.pressEnter();
+                return true;
+            } else {
+                mDevice.pressDPadLeft();
+            }
+        }
+        return false;
     }
 
     //进入直播
@@ -117,6 +155,11 @@ public class ApplicationTest {
         if (!scroll.scrollIntoView(new UiSelector().textContains("服务协议"))) {
             fail();
         }
+    }
+
+    @Test
+    public void TestLogUtils() {
+        Utils.logKuyunMemory("test", mContext);
     }
 
     @Test
