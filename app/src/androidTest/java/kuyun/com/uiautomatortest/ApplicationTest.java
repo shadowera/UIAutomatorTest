@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,6 +50,7 @@ public class ApplicationTest {
         mDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         assertThat(mDevice, notNullValue());
         mContext = InstrumentationRegistry.getContext();
+        String apkRoot = "chmod 777 " + mContext.getPackageCodePath();
         //mDevice.pressHome();
     }
 
@@ -59,7 +61,7 @@ public class ApplicationTest {
         // Utils.UiAutomationLog("childcount=" + children.size() + ",count=" + childCount);
         List<UiObject2> children = list.getChildren();
         UiObject2 item = children.get(children.size() - 1);
-       // Utils.UiAutomationLog(children.size() + "");
+        // Utils.UiAutomationLog(children.size() + "");
         boolean has = item.hasObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/view_mask"));
 
         String title = item.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/tv_default_title")).getText();
@@ -73,7 +75,7 @@ public class ApplicationTest {
         for (int index = childCount - 1; index > 0; index--) {
             list = mDevice.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/ll_scroll_main"));
             children = list.getChildren();
-           // Utils.UiAutomationLog(children.size() + "");
+            // Utils.UiAutomationLog(children.size() + "");
             item = children.get(children.size() - 2);
             has = item.hasObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/view_mask"));
             title = item.findObject(By.res("com.kuyun.plugin.app.card.pluginlist:id/tv_default_title")).getText();
@@ -94,6 +96,18 @@ public class ApplicationTest {
         mDevice.pressEnter();
         waitForObject(By.res("com.xiaomi.mitv.tvplayer:id/root_view"));
         Thread.sleep(7000);//等识台
+    }
+
+    @Test
+    public void testApi() throws IOException, InterruptedException {
+        List<AppEntity> androidProcess = Utils.getAndroidProcess(mContext);
+        if(androidProcess!=null){
+            for(AppEntity app:androidProcess){
+                Utils.UiAutomationLog(TAG+app.getPackageName()+",pss="+app.getPss());
+            }
+        }
+
+        //Utils.logKuyunMemory("logkuyunmemory",mContext);
     }
 
 
@@ -157,10 +171,10 @@ public class ApplicationTest {
         }
     }
 
-    @Test
+   /* @Test
     public void TestLogUtils() {
         Utils.logKuyunMemory("test", mContext);
-    }
+    }*/
 
     @Test
     public void GRZX_0009() throws InterruptedException {

@@ -2,14 +2,23 @@ package kuyun.com.uiautomatortest;
 
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Rect;
+import android.os.Build;
 import android.os.Debug;
 import android.os.Environment;
 import android.util.Log;
 
+import com.jaredrummler.android.processes.AndroidProcesses;
+import com.jaredrummler.android.processes.ProcessManager;
+import com.jaredrummler.android.processes.models.AndroidAppProcess;
+
+import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -17,7 +26,7 @@ import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
@@ -196,54 +205,96 @@ public class Utils {
          UiAutomationLog(commandResult.errorMsg);
      }*/
 
-    /**在log文件中打印kuyun主程序内存信息
-     * @param msg 附加信息
-     * @param context 可以传
+    /**
+     * 在log文件中打印kuyun主程序内存信息
+     *
+     * @param msg     附加信息
+     * @param context
      */
     public static void logKuyunMemory(String msg, Context context) {
-        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
-        List<ActivityManager.RunningAppProcessInfo> procInfo = am.getRunningAppProcesses();
-        for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : procInfo) {
-            System.out.println(runningAppProcessInfo.processName + String.format(",pid = %d", runningAppProcessInfo.pid));
-            if (runningAppProcessInfo.processName.indexOf(kuyun_packagename) != -1) {
-                int pids[] = {runningAppProcessInfo.pid};
-                Debug.MemoryInfo self_mi[] = am.getProcessMemoryInfo(pids);
-                StringBuffer strbuf = new StringBuffer();
-                strbuf.append(" proccess Name:").append(runningAppProcessInfo.processName)
-                        .append("\n pid:").append(runningAppProcessInfo.pid)
-                        .append("\n dalvikPrivateDirty:").append(self_mi[0].dalvikPrivateDirty)
-                        .append("\n dalvikPss:").append(self_mi[0].dalvikPss)
-                        .append("\n dalvikSharedDirty:").append(self_mi[0].dalvikSharedDirty)
-                        .append("\n nativePrivateDirty:").append(self_mi[0].nativePrivateDirty)
-                        .append("\n nativePss:").append(self_mi[0].nativePss)
-                        .append("\n nativeSharedDirty:").append(self_mi[0].nativeSharedDirty)
-                        .append("\n otherPrivateDirty:").append(self_mi[0].otherPrivateDirty)
-                        .append("\n otherPss:").append(self_mi[0].otherPss)
-                        .append("\n otherSharedDirty:").append(self_mi[0].otherSharedDirty)
-                        .append("\n TotalPrivateDirty:").append(self_mi[0].getTotalPrivateDirty())
-                        .append("\n TotalPss:").append(self_mi[0].getTotalPss())
-                        .append("\n TotalSharedDirty:").append(self_mi[0].getTotalSharedDirty());
-                UiAutomationLog(msg + (strbuf.toString()));
+        if (Build.VERSION.SDK_INT < 21) {
+            ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+            List<ActivityManager.RunningAppProcessInfo> procInfo = am.getRunningAppProcesses();
+            for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : procInfo) {
+                System.out.println(runningAppProcessInfo.processName + String.format(",pid = %d", runningAppProcessInfo.pid));
+                if (runningAppProcessInfo.processName.indexOf(kuyun_packagename) != -1) {
+                    int pids[] = {runningAppProcessInfo.pid};
+                    Debug.MemoryInfo self_mi[] = am.getProcessMemoryInfo(pids);
+                    StringBuffer strbuf = new StringBuffer();
+                    strbuf.append(" proccess Name:").append(runningAppProcessInfo.processName)
+                            .append("\n pid:").append(runningAppProcessInfo.pid)
+                            .append("\n dalvikPrivateDirty:").append(self_mi[0].dalvikPrivateDirty)
+                            .append("\n dalvikPss:").append(self_mi[0].dalvikPss)
+                            .append("\n dalvikSharedDirty:").append(self_mi[0].dalvikSharedDirty)
+                            .append("\n nativePrivateDirty:").append(self_mi[0].nativePrivateDirty)
+                            .append("\n nativePss:").append(self_mi[0].nativePss)
+                            .append("\n nativeSharedDirty:").append(self_mi[0].nativeSharedDirty)
+                            .append("\n otherPrivateDirty:").append(self_mi[0].otherPrivateDirty)
+                            .append("\n otherPss:").append(self_mi[0].otherPss)
+                            .append("\n otherSharedDirty:").append(self_mi[0].otherSharedDirty)
+                            .append("\n TotalPrivateDirty:").append(self_mi[0].getTotalPrivateDirty())
+                            .append("\n TotalPss:").append(self_mi[0].getTotalPss())
+                            .append("\n TotalSharedDirty:").append(self_mi[0].getTotalSharedDirty());
+                    UiAutomationLog(msg + (strbuf.toString()));
+                }
+            }
+        } else {
+            List<AppEntity> androidProcess = Utils.getAndroidProcess(context);
+            boolean isKuyunProcessOn = false;
+            if (androidProcess != null) {
+                for (AppEntity app : androidProcess) {
+                    if (kuyun_packagename.equals(app.getPackageName())) {
+                        isKuyunProcessOn = true;
+                        Utils.UiAutomationLog(msg + ":" + app.getPackageName() + ",pss=" + app.getPss());
+                    }
+                }
+            }
+            if (!isKuyunProcessOn) {
+                UiAutomationLog(msg + ":" + "kuyun主程序未启动");
             }
         }
+
     }
 
+   /* public static void logMemory(String msg) throws IOException, InterruptedException {
+        CommandExecution.CommandResult commandResult = CommandExecution.execCommand("/system/xbin/procrank", true);
+        if (commandResult != null) {
+            Log.d(msg, commandResult.successMsg + "");
+            Log.d(msg, commandResult.errorMsg + "");
+        }
+       *//* String[] cmd = {"/system/xbin/procrank"};
+        Process process = new ProcessBuilder()
+                .command(cmd)
+                .redirectErrorStream(true)
+                .start();
+        BufferedReader in = new BufferedReader(
+                new InputStreamReader(process.getInputStream()));
+        String line = "";
+        while ((line = in.readLine()) != null) {
+            UiAutomationLog("logMemory" + "Line=" + line);
+        }
+        process.waitFor();*//*
+    }*/
 
 
-    public static String m_logpathString = "/mnt/sdcard/PerformanceLog.txt";
+    public static String m_logpathString = "/PerformanceLog.txt";
+
     /**
-     打log
-     *文件地址/mnt/sdcard/PerformanceLog.txt
+     * 打log
+     * 文件地址/mnt/sdcard/PerformanceLog.txt
      */
     public static void UiAutomationLog(String str) {
         // 取得当前时间
+        String logPath = Environment.getExternalStorageDirectory().getAbsolutePath() + m_logpathString;
+        File file = new File(logPath);
+        Log.d("path", logPath);
         Calendar calendar = Calendar.getInstance();
         calendar.setTimeInMillis(System.currentTimeMillis());
         String datestr = calendar.get(Calendar.HOUR_OF_DAY) + ":" + calendar.get(Calendar.MINUTE) + ":" + calendar.get(Calendar.SECOND) + ":" + calendar.get(Calendar.MILLISECOND) + ":";
 
         FileWriter fwlog = null;
         try {
-            fwlog = new FileWriter(m_logpathString, true);
+            fwlog = new FileWriter(logPath, true);
             fwlog.write(datestr + str + "\r\n");
             System.out.println(datestr + str);
             fwlog.flush();
@@ -252,10 +303,96 @@ public class Utils {
             e.printStackTrace();
         } finally {
             try {
-                fwlog.close();
+                if (fwlog != null) {
+                    fwlog.close();
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+    }
+
+    public static String sudoForResult(String... strings) {
+        String res = "";
+        DataOutputStream outputStream = null;
+        InputStream response = null;
+        try {
+            Process su = Runtime.getRuntime().exec("su");
+            outputStream = new DataOutputStream(su.getOutputStream());
+            response = su.getInputStream();
+
+            for (String s : strings) {
+                outputStream.writeBytes(s + "\n");
+                outputStream.flush();
+            }
+
+            outputStream.writeBytes("exit\n");
+            outputStream.flush();
+            try {
+                su.waitFor();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            res = readFully(response);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return res;
+    }
+
+    public static String readFully(InputStream is) throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int length = 0;
+        while ((length = is.read(buffer)) != -1) {
+            baos.write(buffer, 0, length);
+        }
+        return baos.toString("UTF-8");
+    }
+
+    public static List<AppEntity> getAndroidProcess(Context context) {
+        List<AppEntity> resule = new ArrayList<AppEntity>();
+        ActivityManager am = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
+        PackageManager pm = context.getPackageManager();
+        AppUtils proutils = new AppUtils(context);
+        List<AndroidAppProcess> listInfo = AndroidProcesses.getRunningAppProcesses();
+        if (listInfo.isEmpty() || listInfo.size() == 0) {
+            return null;
+        }
+        for (AndroidAppProcess info : listInfo) {
+            ApplicationInfo app = proutils.getApplicationInfo(info.name);
+            // 过滤自己当前的应用
+            if (app == null || context.getPackageName().equals(app.packageName)) {
+                continue;
+            }
+            // 过滤系统的应用
+            if ((app.flags & app.FLAG_SYSTEM) > 0) {
+                continue;
+            }
+            AppEntity ent = new AppEntity();
+            ent.setAppIcon(app.loadIcon(pm));//应用的图标
+            ent.setAppName(app.loadLabel(pm).toString());//应用的名称
+            ent.setPackageName(app.packageName);//应用的包名
+            // 计算应用所占内存大小
+            int[] myMempid = new int[]{info.pid};
+            Debug.MemoryInfo[] memoryInfo = am.getProcessMemoryInfo(myMempid);
+            double memSize = memoryInfo[0].dalvikPrivateDirty;
+            int totalPss = memoryInfo[0].getTotalPss();
+            ent.setPss(totalPss);
+            int temp = (int) (memSize * 100);
+            memSize = temp / 100.0;
+            ent.setMemorySize(memSize);//应用所占内存的大小
+
+            resule.add(ent);
+        }
+        return resule;
     }
 }

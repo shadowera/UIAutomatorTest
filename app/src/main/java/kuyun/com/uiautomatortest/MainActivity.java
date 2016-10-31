@@ -1,8 +1,12 @@
 package kuyun.com.uiautomatortest;
 
+import android.Manifest;
+import android.app.Activity;
 import android.app.ActivityManager;
 import android.content.Context;
+import android.content.pm.PackageManager;
 import android.os.Debug;
+import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
@@ -19,8 +23,9 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        verifyStoragePermissions(this);
         setContentView(R.layout.activity_main);
-        getmem_SELF();
+        // getmem_SELF();
        /* ActivityManager activityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memoryInfo = new ActivityManager.MemoryInfo();
         activityManager.getMemoryInfo(memoryInfo);
@@ -48,17 +53,37 @@ public class MainActivity extends AppCompatActivity {
             }
         }*/
     }
+
+    private static final int REQUEST_EXTERNAL_STORAGE = 1;
+    private static String[] PERMISSIONS_STORAGE = {
+            Manifest.permission.READ_EXTERNAL_STORAGE,
+            Manifest.permission.WRITE_EXTERNAL_STORAGE
+    };
+
+    public static void verifyStoragePermissions(Activity activity) {
+        // Check if we have write permission
+        int permission = ActivityCompat.checkSelfPermission(activity, Manifest.permission.WRITE_EXTERNAL_STORAGE);
+
+        if (permission != PackageManager.PERMISSION_GRANTED) {
+            // We don't have permission so prompt the user
+            ActivityCompat.requestPermissions(
+                    activity,
+                    PERMISSIONS_STORAGE,
+                    REQUEST_EXTERNAL_STORAGE
+            );
+        }
+    }
+
     public long getmem_SELF() {
         ActivityManager am = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
 
         List<ActivityManager.RunningAppProcessInfo> procInfo = am.getRunningAppProcesses();
         for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : procInfo) {
-            System.out.println(runningAppProcessInfo.processName+ String.format(",pid = %d", runningAppProcessInfo.pid));
-            if( runningAppProcessInfo.processName.indexOf(this.getPackageName()) != -1 )
-            {
+            System.out.println(runningAppProcessInfo.processName + String.format(",pid = %d", runningAppProcessInfo.pid));
+            if (runningAppProcessInfo.processName.indexOf(this.getPackageName()) != -1) {
                 int pids[] = {runningAppProcessInfo.pid};
                 Debug.MemoryInfo self_mi[] = am.getProcessMemoryInfo(pids);
-                StringBuffer  strbuf = new StringBuffer();
+                StringBuffer strbuf = new StringBuffer();
                 strbuf.append(" proccess Name:").append(runningAppProcessInfo.processName)
                         .append("\n pid:").append(runningAppProcessInfo.pid)
                         .append("\n dalvikPrivateDirty:").append(self_mi[0].dalvikPrivateDirty)
@@ -73,7 +98,7 @@ public class MainActivity extends AppCompatActivity {
                         .append("\n TotalPrivateDirty:").append(self_mi[0].getTotalPrivateDirty())
                         .append("\n TotalPss:").append(self_mi[0].getTotalPss())
                         .append("\n TotalSharedDirty:").append(self_mi[0].getTotalSharedDirty());
-                Log.v("TEST",strbuf.toString());
+                Log.v("TEST", strbuf.toString());
             }
         }
         return 0;
